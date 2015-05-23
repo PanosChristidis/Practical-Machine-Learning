@@ -1,0 +1,52 @@
+---
+title: "Project write-up"
+---
+
+**Load libraries and data**
+```{r}
+library(caret)
+library(rpart)
+library(rpart.plot)
+ 
+trainUrl <- "http://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv"
+valUrl <- "http://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv"
+data <- read.csv(url(trainUrl), header=TRUE, sep=",", na.strings=c("NA","#DIV/0!",""))
+validate <- read.csv(url(valUrl), header=TRUE, sep=",", na.strings=c("NA","#DIV/0!",""))
+```
+
+**Remove columns that do not contain usable info (1-7)**
+```{r, echo=TRUE}
+data <- data[,-seq(1:7)]
+```
+
+**Removing the columns that have NAs**
+```{r, echo=TRUE}
+
+# select columns that don't have NAs
+haveNA <- as.vector(sapply(data[,1:152],function(x) {length(which(is.na(x)))!=0}))
+data <- data[,!haveNA]
+```
+
+**Split of dataset into 70% for training and 30% for testing**
+```{r, echo=TRUE}
+inTrain <- createDataPartition(y=data$classe, p=0.7, list=FALSE )
+train <- data[inTrain,]
+test <- data[-inTrain,]
+```
+
+**Modeling a decision tree with Rpart**
+```{r, echo=TRUE}
+dt <- rpart(classe ~ ., data=train, method="class")
+```
+
+**The resulting decision tree**
+```{r, echo=FALSE}
+prp(dt)
+```
+
+**Cross-validation**
+```{r, echo=TRUE}
+predict1 <- predict(dt, test, type = "class")
+confusionMatrix(predict1, test$classe)
+```
+
